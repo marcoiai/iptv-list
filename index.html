@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct TS Live Stream Player</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        video {
+            max-width: 90%;
+            height: auto;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+        #streamInput {
+            width: 70%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #loadStreamBtn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #loadStreamBtn:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 15px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Play Direct .ts Live Stream</h1>
+
+    <input type="text" id="streamInput" placeholder="Enter .ts live stream URL (e.g., http://yourserver.com/live.ts)">
+    <button id="loadStreamBtn">Load Stream</button>
+
+    <video id="videoPlayer" controls autoplay></video>
+    <p class="message" id="errorMessage"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest"></script>
+
+    <script>
+        const videoElement = document.getElementById('videoPlayer');
+        const streamInput = document.getElementById('streamInput');
+        const loadStreamBtn = document.getElementById('loadStreamBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let player = null; // To hold the mpegts.js player instance
+
+        function loadStream() {
+            const tsSource = streamInput.value.trim();
+            errorMessage.textContent = ''; // Clear previous errors
+
+            if (!tsSource) {
+                errorMessage.textContent = 'Please enter a stream URL.';
+                return;
+            }
+
+            // If a player instance already exists, destroy it before creating a new one
+            if (player) {
+                player.pause();
+                player.unload();
+                player.destroy();
+                player = null;
+                videoElement.src = ''; // Clear video source
+            }
+
+            if (mpegts.getFeatureList().mseLivePlayback) {
+                player = mpegts.createPlayer({
+                    type: 'mse', // Indicate Media Source Extensions
+                    isLive: true, // Crucial for live stream optimizations
+                    url: tsSource,
+                    // Optional: adjust live buffer size if needed
+                    liveBufferLatency: 0.5 // e.g., 0.5 seconds latency
+                });
+
+                player.attachMediaElement(videoElement);
+                player.load();
+                player.play();
+
+                // Event listeners for debugging and error handling
+                player.on(mpegts.Events.ERROR, function (errorType, errorDetail, errorInfo) {
+                    console.error('MPEGTS.js Error:', errorType, errorDetail, errorInfo);
+                    errorMessage.textContent = `Stream Error: ${errorType} - ${errorDetail}`;
+                    if (errorType === mpegts.ErrorTypes.NETWORK_ERROR) {
+                        // Attempt to reload or notify user
+                        console.log('Network error, attempting to retry...');
+                        // player.load(); // You might attempt to reload, or show a reconnect button
+                    }
+                });
+                player.on(mpegts.Events.LOADING_COMPLETE, function () {
+                    console.log('Stream loading complete.');
+                    player.load();
+                    player.play();
+                });
+                player.on(mpegts.Events.STATISTICS_INFO, function (stats) {
+                    // console.log('Statistics:', stats);
+                });
+            } else {
+                // Fallback for browsers that might natively support .ts (like Safari)
+                // This is generally less reliable for live .ts streams on non-Safari browsers.
+                if (videoElement.canPlayType('video/mp2t')) { // MIME type for MPEG-TS
+                    videoElement.src = tsSource;
+                    videoElement.addEventListener('loadedmetadata', function() {
+                        videoElement.play();
+                    });
+                } else {
+                    errorMessage.textContent = 'Your browser does not support playing direct .ts files natively or via mpegts.js.';
+                    console.error('Browser does not support direct .ts playback.');
+                }
+            }
+        }
+
+        loadStreamBtn.addEventListener('click', loadStream);
+
+        // Optional: Auto-load a default stream on page load for testing
+        // streamInput.value = 'http://distribution.phx.cablecast.tv/video/1476/mp2t'; // Example (may not be live/always available)
+        // loadStream(); // Uncomment to auto-load
+    </script>
+</body>
+</html>
