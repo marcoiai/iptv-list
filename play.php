@@ -16,6 +16,7 @@
         .card-image img {
             width: 150px;
             height: 150px !important;
+            max-width: 150px !important;
         }
     </style>
 </head>
@@ -37,12 +38,12 @@
       <br><br>
       <h1 class="header center orange-text">Selecione os canais que deseja contratar!</h1>
       <div class="row center">
-        <h5 class="header col s12 light">Revise a lista e se desejar, pode clical em "Selecionar Todos" para facilitar.</h5>
+        <h5 class="header col s12 light">Revise a lista e se desejar, pode clicar em "Selecionar Todos" para facilitar.</h5>
       </div>
       <div class="row center">
         <div class="input-field col s6">
-          <input placeholder="Choose a filename for the new list" id="filename" name="filename" type="text" class="validate">
-          <label for="filename">File Name</label>
+          <input placeholder="Nome do arquivo da lista" id="filename" name="filename" type="text" class="validate">
+          <label for="filename">Nome do Arquivo</label>
         </div>
       </div>
       <div class="row center">
@@ -52,7 +53,7 @@
           <label for="filename">Generos</label>
         </div>
         <div class="input-field col s6">
-          <input placeholder="Digite os generos desejados" id="especifico" name="especifico" type="text" class="especifico">
+          <input placeholder="Digite o nome especifico ou similar" id="especifico" name="especifico" type="text" class="especifico">
           <label for="filename">Especifico</label>
         </div>
         <button type="submit" id="filter" class="btn-large waves-effect waves-light orange">Filtrar</button>
@@ -70,13 +71,13 @@
         <div class="col s12 m12">
           <div class="icon-block">
             <h2 class="center light-blue-text"><i class="material-icons">movie</i></h2>
-            <h5 class="center">Aqui seu vídeo será exibido.</h5>
+            <h5 class="center" id="movie-title">Aqui seu vídeo será exibido.</h5>
 
-            <div class="video-container container-other" hide>
+            <div class="video-container container-other">
                 <iframe id="video-player" width="853" height="480" src="//www.youtube.com/embed/Q8TXgCzxEnw?rel=0" frameborder="0" allowfullscreen></iframe>
             </div>
 
-            <div class="video-container container-ts" hide>
+            <div class="video-container container-ts hide">
                 <!--
                 <input type="text" id="streamInput" placeholder="Enter .ts live stream URL (e.g., http://yourserver.com/live.ts)">
                 <button id="loadStreamBtn">Load Stream</button>
@@ -260,7 +261,7 @@
             }
 
             echo <<<C
-            <div class="col s12 m7">
+            <div class="col s12 m12 l6">
             <div class="card horizontal">
             <div class="card-image">
                 <img src="$images[1]">
@@ -270,11 +271,14 @@
                 <p>{$titles[1]}</p>
                 </div>
                 <div class="card-action">
-                    <a href="{$title[1]}" class="btn-large waves-effect play-video">$c Play</a>
+                    <a href="{$title[1]}" class="btn-large waves-effect play-video" name="{$title[0]}">
+                        Play
+                        <i class="material-icons right">play_circle_outline</i>
+                    </a>
                     <p>
                     <label>
                         <input class="line" type="checkbox" name="lines[]" value="$encoded" />
-                        <span>{$title[0]}</span>
+                        <span style="">{$title[0]}</span>
                     </label>
                     </p>
                 </div>
@@ -294,7 +298,7 @@ C;
             <p class="light">We did most of the heavy lifting for you to provide a default stylings that incorporate our custom components. Additionally, we refined animations and transitions to provide a smoother experience for developers.</p>
 
             <a href="?start=<?php echo $end - 2000 ?>&stop=1000" class="btn-large waves-effect waves-light orange">Previous</a>
-            <a href="?start=<?php echo $end ?>&stop=1000" class="btn-large waves-effect waves-light orange">Next</a>
+            <a href="?start=<?php echo $end ?>&stop=<?php echo $end + 100 ?>" class="btn-large waves-effect waves-light orange">Next</a>
           </div>
         </div>
       </div>
@@ -338,8 +342,10 @@ C;
 
   <script>
     document.getElementById('select_all').addEventListener('click', (e) => {
-        document.querySelectorAll('.line').forEach((e) => {
-            e.checked = true;
+        let checked = e.target.checked;
+
+        document.querySelectorAll('.line').forEach((el) => {
+            el.checked = checked;
         });
     });
 
@@ -348,8 +354,11 @@ C;
     });
 
     document.querySelectorAll('.play-video').forEach((e) => {
+        let movieName = e.name;
         e.addEventListener('click', (e) => {
             e.preventDefault();
+
+            document.getElementById('movie-title').innerHTML = movieName;
 
             if ((e.srcElement.href.split("://")[2]).search('.ts') === -1) {
                 document.getElementById('video-player').src = `http://${e.srcElement.href.split("://")[2]}`;
@@ -365,7 +374,14 @@ C;
 
                 document.querySelector('.container-other').hidden = true;
                 document.querySelector('.container-ts').hidden = false;
+
+                document.querySelector('.container-ts').classList.remove('hide');
             }
+
+            window.scrollTo({
+                top: 400,
+                behavior: "smooth"
+            });
         });
     });
   </script>
