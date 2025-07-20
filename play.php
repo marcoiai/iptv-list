@@ -18,6 +18,10 @@
             height: 150px !important;
             max-width: 150px !important;
         }
+
+        #videoPlayer-ts {
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -47,7 +51,7 @@
         </div>
       </div>
       <div class="row center">
-        <form method="post" action="http://127.0.0.1:9090/play.php?start=0&stop=100000">
+        <form method="post" action="play.php?start=0&stop=228586">
         <div class="input-field col s6">
           <input placeholder="Digite os generos desejados" id="generos" name="generos" type="text" class="generos">
           <label for="filename">Generos</label>
