@@ -44,7 +44,19 @@
           <input placeholder="Choose a filename for the new list" id="filename" name="filename" type="text" class="validate">
           <label for="filename">File Name</label>
         </div>
-        <a href="http://materializecss.com/getting-started.html" id="download-button" class="btn-large waves-effect waves-light orange">Download</a>
+      </div>
+      <div class="row center">
+        <form method="post" action="http://127.0.0.1:9090/play.php?start=0&stop=100000">
+        <div class="input-field col s6">
+          <input placeholder="Digite os generos desejados" id="generos" name="generos" type="text" class="generos">
+          <label for="filename">Generos</label>
+        </div>
+        <div class="input-field col s6">
+          <input placeholder="Digite os generos desejados" id="especifico" name="especifico" type="text" class="especifico">
+          <label for="filename">Especifico</label>
+        </div>
+        <button type="submit" id="filter" class="btn-large waves-effect waves-light orange">Filtrar</button>
+        </form>
       </div>
       <br><br>
 
@@ -60,17 +72,20 @@
             <h2 class="center light-blue-text"><i class="material-icons">movie</i></h2>
             <h5 class="center">Aqui seu vídeo será exibido.</h5>
 
-            <div class="video-container">
+            <div class="video-container container-other" hide>
                 <iframe id="video-player" width="853" height="480" src="//www.youtube.com/embed/Q8TXgCzxEnw?rel=0" frameborder="0" allowfullscreen></iframe>
             </div>
 
-            <div class="video-container">
+            <div class="video-container container-ts" hide>
+                <!--
                 <input type="text" id="streamInput" placeholder="Enter .ts live stream URL (e.g., http://yourserver.com/live.ts)">
                 <button id="loadStreamBtn">Load Stream</button>
+                --->
 
                 <video id="videoPlayer-ts" controls autoplay></video>
                 <p class="message" id="errorMessage"></p>
             </div>
+
             <script>
             const videoElement = document.getElementById('videoPlayer-ts');
             const streamInput = document.getElementById('streamInput');
@@ -79,8 +94,8 @@
 
             let player = null; // To hold the mpegts.js player instance
 
-            function loadStream() {
-                const tsSource = streamInput.value.trim();
+            function loadStream(streamUrl) {
+                const tsSource = streamUrl.trim();
                 errorMessage.textContent = ''; // Clear previous errors
 
                 if (!tsSource) {
@@ -113,7 +128,9 @@
                     // Event listeners for debugging and error handling
                     player.on(mpegts.Events.ERROR, function (errorType, errorDetail, errorInfo) {
                         console.error('MPEGTS.js Error:', errorType, errorDetail, errorInfo);
+
                         errorMessage.textContent = `Stream Error: ${errorType} - ${errorDetail}`;
+
                         if (errorType === mpegts.ErrorTypes.NETWORK_ERROR) {
                             // Attempt to reload or notify user
                             console.log('Network error, attempting to retry...');
@@ -122,7 +139,7 @@
                     });
                     player.on(mpegts.Events.LOADING_COMPLETE, function () {
                         console.log('Stream loading complete.');
-                        player.load();
+                        //player.load();
                         player.play();
                     });
                     player.on(mpegts.Events.STATISTICS_INFO, function (stats) {
@@ -143,7 +160,7 @@
                 }
             }
 
-            loadStreamBtn.addEventListener('click', loadStream);
+            //loadStreamBtn.addEventListener('click', loadStream);
 
             // Optional: Auto-load a default stream on page load for testing
             // streamInput.value = 'http://distribution.phx.cablecast.tv/video/1476/mp2t'; // Example (may not be live/always available)
@@ -172,10 +189,14 @@
 
             $exploded = explode("\r\n", $content);
 
-            $excluded_titles = '24 horas|cursos|romance|drama|sexy|filmes|[^canais | filmes]';
-            //$included_titles = 'canais|filmes';
-            $included_titles = 'canais';
-            //$included_titles = 'filmes|superman';
+            if (empty($_POST['generos'])) {
+                $excluded_titles = '24 horas|cursos|romance|drama|sexy|filmes|[^canais | filmes]';
+                //$included_titles = 'canais|filmes';
+                $included_titles = 'canais';
+                $included_titles = 'canais|filmes';
+            } else {
+                $included_titles = $_POST['generos'];
+            }
 
             /* This can serve to include / exclude years
             for ($c = 1990; $c <= 2010; $c++) {
@@ -231,6 +252,12 @@
             $encoded = base64_encode("{$original_link}\n");
 
             $title = explode('http', explode(',', $exploded[$c])[1]);
+
+            if (!empty($_POST['especifico'])) {
+                if (stripos($title[0], $_POST['especifico']) === false) {
+                    continue;
+                }
+            }
 
             echo <<<C
             <div class="col s12 m7">
@@ -326,10 +353,18 @@ C;
 
             if ((e.srcElement.href.split("://")[2]).search('.ts') === -1) {
                 document.getElementById('video-player').src = `http://${e.srcElement.href.split("://")[2]}`;
-                console.log(`http://${e.srcElement.href.split("://")[2]}`);
+                //console.log(`http://${e.srcElement.href.split("://")[2]}`);
+
+                document.querySelector('.container-other').hidden = false;
+                document.querySelector('.container-ts').hidden = true;
             } else {
                 //document.getElementById('video-player').src = `http://${e.srcElement.href.split("://")[2]}`;
-                console.log(`http://${e.srcElement.href.split("://")[2]}`);
+                //console.log(`http://${e.srcElement.href.split("://")[2]}`);
+
+                loadStream(`http://${e.srcElement.href.split("://")[2]}`);
+
+                document.querySelector('.container-other').hidden = true;
+                document.querySelector('.container-ts').hidden = false;
             }
         });
     });
